@@ -14,7 +14,7 @@ sem --wait
 
 cd realism && python -u impact_single_day_pov.py plot_configs/plot_configs/single_day/rmsc03_demo_single_day.json && cd ..
 
-# Multiple seeds for execution experiment
+Multiple seeds for execution experiment
 for seed in $(seq 100 120); do
   sem -j${NUM_JOBS} --line-buffer python -u abides.py -c rmsc03 -t ABM -d 20200605 -s ${seed} -l rmsc03_demo_no_${seed}_20200605
   for pov in  0.01 0.05 0.1 0.5; do
