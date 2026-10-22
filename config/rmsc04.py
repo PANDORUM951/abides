@@ -26,7 +26,7 @@ from agent.examples.MomentumAgent import MomentumAgent
 from agent.execution.POVExecutionAgent import POVExecutionAgent
 from model.LatencyModel import LatencyModel
 
-from agent.market_makers import RandomMarketMakerAgent
+from agent.market_makers.RandomMarketMakerAgent import RandomMarketMakerAgent
 
 ########################################################################################################################
 ############################################### GENERAL CONFIG #########################################################
@@ -273,13 +273,15 @@ agent_types.extend('POVMarketMakerAgent')
 # 4.1) CUSTOM MMs
 # 4.2) Baseline MMs
 
-# Random Market Maker
+# Random Market Maker Agent
 agents.extend([RandomMarketMakerAgent(id=agent_count,
                                  name="RANDOM_MARKET_MAKER_AGENT",
                                  type="RandomMarketMakerAgent",
                                  symbol=symbol,
                                  starting_cash=starting_cash,
-                                 log_orders=True)])
+                                 log_orders=True,
+                                 random_state=np.random.RandomState(seed=np.random.randint(low=0, high=2 ** 32,
+                                                                                           dtype='uint64')))])
 agent_count += 1
 agent_types.extend('RandomMarketMakerAgent')
 
