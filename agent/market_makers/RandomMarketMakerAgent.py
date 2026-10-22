@@ -42,6 +42,7 @@ class RandomMarketMakerAgent(TradingAgent):
         self.log_orders = log_orders
         self.state = "AWAITING_WAKEUP"
 
+
     def kernelStarting(self, startTime):
         super().kernelStarting(startTime)
 
@@ -56,13 +57,15 @@ class RandomMarketMakerAgent(TradingAgent):
 
     def receiveMessage(self, currentTime, msg):
         """ Once the spread arrives, hedge, quote, and schedule the next wake-up """
-        if self.mkt_closed: return
+        super().receiveMessage(currentTime, msg)
 
-        self.hedge()
-        self.quote()
+        if self.state == 'AWAITING_SPREAD' and msg.body['msg'] == 'QUERY_SPREAD':
+            self.hedge()
+            self.quote()
 
-        self.setWakeup(currentTime + self.getWakeFrequency())
-        self.state = 'AWAITING_WAKEUP'
+
+            self.setWakeup(currentTime + self.getWakeFrequency())
+            self.state = 'AWAITING_WAKEUP'
 
     # Strategy Logic
 
