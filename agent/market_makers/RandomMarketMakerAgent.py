@@ -13,18 +13,21 @@ QUOTE_EPSILONS = np.round(np.arange(-1, 1.01, 0.2), 2)
 # Discrete grid for the hedge epsilon. Fraction of the current inventory to unwind.
 HEDGE_EPSILONS = np.array([0.0, 0.25, 0.5, 0.75, 1.0])
 
-class MarketMakerAgent(TradingAgent):
+class RandomMarketMakerAgent(TradingAgent):
     """
-    Simple market maker agent that attempts to provide liquidity in the orderbook by placing orders on both sides every
-    time it wakes up. The agent starts off by cancelling any existing orders, it then queries the current spread to
-    determine the trades to be placed. The order size is chosen at random between min_size and max_size which are parameters
-    of the agent.
+    Naive market maker that randomises its quoting spread and its hedging on every wake-up.
 
-    If subscribe == True
-        The agent places orders in 1-5 price levels randomly with sizes determined by the levels_quote_dict.
+    At each wake-up it:
+        1. Cancels all of its resting limit orders.
+        2. Samples one quoting epsilon (uniform over QUOTE_EPSILONS) and one hedge epsilon
+           (uniform over HEDGE_EPSILONS).
+        3. Hedges: sends a market order opposite to the sign of its inventory, for
+           hedge_eps * |inventory| shares. Does nothing if inventory is zero or hedge_eps is zero.
+        4. Quotes one bid and one ask of fixed size, at mid -/+ spread_mm, where
+           spread_mm = spread_ref * (1 + quote_eps) and spread_ref is the observed half-spread.
 
-    Else if subscribe == False:
-        The agent places an order of size / 2 at both the best bid and best ask price levels
+    The hedge is sent before the new quotes so that the market order cannot match against
+    the agent's own freshly placed limit orders.
 
     """
 
