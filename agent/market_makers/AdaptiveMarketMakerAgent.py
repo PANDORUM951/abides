@@ -185,7 +185,7 @@ class AdaptiveMarketMakerAgent(TradingAgent):
                     log_print("SPREAD MISSING at time {}", currentTime)
                     self.state['AWAITING_MARKET_DATA'] = False
 
-            if self.state['MARKET_DATA'] is False and self.state['AWAITING_TRANSACTED_VOLUME'] is False:
+            if self.state['AWAITING_MARKET_DATA'] is False and self.state['AWAITING_TRANSACTED_VOLUME'] is False:
                 self.placeOrders(mid)
                 self.state = self.initialiseState()
 

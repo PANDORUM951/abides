@@ -27,6 +27,7 @@ from agent.execution.POVExecutionAgent import POVExecutionAgent
 from model.LatencyModel import LatencyModel
 
 from agent.market_makers.RandomMarketMakerAgent import RandomMarketMakerAgent
+from agent.market_makers.PersistentMarketMakerAgent import PersistentMarketMakerAgent
 
 ########################################################################################################################
 ############################################### GENERAL CONFIG #########################################################
@@ -284,6 +285,18 @@ agents.extend([RandomMarketMakerAgent(id=agent_count,
                                                                                            dtype='uint64')))])
 agent_count += 1
 agent_types.extend('RandomMarketMakerAgent')
+
+# Persistent Market Maker Agent
+agents.extend([PersistentMarketMakerAgent(id=agent_count,
+                                    name="PERSISTENT_MARKET_MAKER_AGENT",
+                                    type="PersistentMarketMakerAgent",
+                                    symbol=symbol,
+                                    starting_cash=starting_cash,
+                                    log_orders=True,
+                                    random_state=np.random.RandomState(seed=np.random.randint(low=0, high=2 ** 32,
+                                                                                           dtype='uint64')))])
+agent_count += 1
+agent_types.extend('PersistentMarketMakerAgent')
 
 # 5) Momentum Agents
 num_momentum_agents = 10
