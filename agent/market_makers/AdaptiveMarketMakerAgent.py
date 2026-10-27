@@ -124,7 +124,7 @@ class AdaptiveMarketMakerAgent(TradingAgent):
             self.delay(self.cancel_limit_delay)
             self.getCurrentSpread(self.symbol, depth=self.subscribe_num_levels)
             self.get_transacted_volume(self.symbol, lookback_period=self.wake_up_freq)
-            self.initialiseState()
+            self.state = self.initialiseState()
 
     def receiveMessage(self, currentTime, msg):
         """ Processes message from exchange. Main function is to update orders in orderbook relative to mid-price.
@@ -141,6 +141,8 @@ class AdaptiveMarketMakerAgent(TradingAgent):
         super().receiveMessage(currentTime, msg)
         if self.last_mid is not None:
             mid = self.last_mid
+        else:
+            mid = self.last_trade.get(self.symbol)
 
         if self.last_spread is not None and self.is_adaptive:
             self._adaptive_update_window_and_tick_size()
