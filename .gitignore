@@ -12,3 +12,4 @@ venv/
 .idea/
 .ipynb/
 .ipynb_checkpoints/
+test.py

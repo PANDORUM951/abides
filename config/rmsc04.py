@@ -280,7 +280,7 @@ agents.extend([RandomMarketMakerAgent(id=agent_count,
                                  type="RandomMarketMakerAgent",
                                  symbol=symbol,
                                  starting_cash=starting_cash,
-                                 log_orders=True,
+                                 log_orders=log_orders,
                                  random_state=np.random.RandomState(seed=np.random.randint(low=0, high=2 ** 32,
                                                                                            dtype='uint64')))])
 agent_count += 1
@@ -292,7 +292,7 @@ agents.extend([PersistentMarketMakerAgent(id=agent_count,
                                     type="PersistentMarketMakerAgent",
                                     symbol=symbol,
                                     starting_cash=starting_cash,
-                                    log_orders=True,
+                                    log_orders=log_orders,
                                     random_state=np.random.RandomState(seed=np.random.randint(low=0, high=2 ** 32,
                                                                                            dtype='uint64')))])
 agent_count += 1

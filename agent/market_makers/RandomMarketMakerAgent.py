@@ -46,7 +46,7 @@ class RandomMarketMakerAgent(TradingAgent):
         self.step_bs = 0.0; self.step_hedge_cost = 0.0
         self.prev_mid = None; self.prev_inv = 0
         self.spread_ref = None
-        self.rewards = []   # (time, reward)
+        self.rewards = []
 
 
     def kernelStarting(self, startTime):
@@ -80,7 +80,7 @@ class RandomMarketMakerAgent(TradingAgent):
                 self.spread_ref = (ask - bid) / 2
                 if self.prev_mid is not None:
                     r = self.step_bs + self.prev_inv * (mid - self.prev_mid) - self.step_hedge_cost
-                    self.rewards.append((currentTime, r))
+                    self.rewards.append(r)
                 self.step_bs = self.step_hedge_cost = 0.0
                 self.prev_mid = mid
                 self.prev_inv = self.getHoldings(self.symbol)
@@ -135,9 +135,19 @@ class RandomMarketMakerAgent(TradingAgent):
         order_size = round(self.random_state.randint(self.min_size, self.max_size) / 2) # order size per LOB side
 
         log_print("{} quoting bid {} / ask {} (buy_eps={}, sell_eps={})", self.name, bid_price, ask_price, buy_eps, sell_eps)
-        self.placeLimitOrder(self.symbol, order_size, True, bid_price, tag=bid_spread_mm)
-        self.placeLimitOrder(self.symbol, order_size, False, ask_price, tag=ask_spread_mm)
+        self.placeLimitOrder(self.symbol, order_size, True, bid_price, tag=bid_spread_mm + ask_spread_mm)
+        self.placeLimitOrder(self.symbol, order_size, False, ask_price, tag=bid_spread_mm + ask_spread_mm)
 
+    def kernelTerminating (self):
+        super().kernelTerminating()
+    
+        # Save mean reward
+        if self.rewards:
+            avgReward = np.mean(self.rewards)
+            df = pd.Series([avgReward])
+            self.writeLog(df, filename='RANDOM_MM_REWARD_{}'.format(self.symbol))
+            log_print("Random MM agent reward saved.")
+    
 
     def cancelOrders(self):
         """ cancels all resting limit orders placed by the market maker """
