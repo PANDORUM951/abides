@@ -135,8 +135,8 @@ class RandomMarketMakerAgent(TradingAgent):
         order_size = round(self.random_state.randint(self.min_size, self.max_size) / 2) # order size per LOB side
 
         log_print("{} quoting bid {} / ask {} (buy_eps={}, sell_eps={})", self.name, bid_price, ask_price, buy_eps, sell_eps)
-        self.placeLimitOrder(self.symbol, order_size, True, bid_price, tag=bid_spread_mm + ask_spread_mm)
-        self.placeLimitOrder(self.symbol, order_size, False, ask_price, tag=bid_spread_mm + ask_spread_mm)
+        self.placeLimitOrder(self.symbol, order_size, True, bid_price, tag=bid_spread_mm)
+        self.placeLimitOrder(self.symbol, order_size, False, ask_price, tag=ask_spread_mm)
 
     def kernelTerminating (self):
         super().kernelTerminating()
