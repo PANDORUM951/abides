@@ -15,13 +15,13 @@ HEDGE_EPSILONS = np.array([0.0, 0.25, 0.5, 0.75, 1.0])
 
 class PersistentMarketMakerAgent(TradingAgent):
     """
-    Naive market maker that randomises its quoting spread and its hedging at wake-up.
+    Naive market maker that randomises its quoting spread and its hedging at intiliasation.
 
     At each wake-up it:
         1. Cancels all of its resting limit orders.
         2. Hedges: sends a market order opposite to the sign of its inventory, for
            hedge_eps * |inventory| shares. Does nothing if inventory is zero or hedge_eps is zero.
-        3. Quotes one bid and one ask of random size (250 to 500), at mid -/+ spread_mm, where
+        3. Quotes one bid and one ask of random size (100 to 200), at mid -/+ spread_mm, where
            spread_mm = spread_ref * (1 + quote_eps) and spread_ref is the observed half-spread.
 
     The hedge is sent before the new quotes so that the market order cannot match against
@@ -29,14 +29,13 @@ class PersistentMarketMakerAgent(TradingAgent):
 
     """
 
-    def __init__(self, id, name, type, symbol, starting_cash, min_size=250, max_size=500 , wake_up_freq='1s',
+    def __init__(self, id, name, type, symbol, starting_cash, order_size=150 , wake_up_freq='1s',
                  log_orders=False, random_state=None):
 
         super().__init__(id, name, type, starting_cash=starting_cash, log_orders=log_orders, random_state=random_state)
-        self.symbol = symbol      # Symbol traded
-        self.min_size = min_size  # Minimum order size
-        self.max_size = max_size  # Maximum order size
-        self.wake_up_freq = wake_up_freq  # Frequency of agent wake up
+        self.symbol = symbol     
+        self.order_size = order_size 
+        self.wake_up_freq = wake_up_freq  
         self.log_orders = log_orders
         self.state = "AWAITING_WAKEUP"
 
@@ -77,16 +76,7 @@ class PersistentMarketMakerAgent(TradingAgent):
 
         if self.state == 'AWAITING_SPREAD' and msg.body['msg'] == 'QUERY_SPREAD':
             # Update reward
-            bid, _, ask, _ = self.getKnownBidAsk(self.symbol)
-            if bid is not None and ask is not None:
-                mid = (bid + ask) / 2
-                self.spread_ref = (ask - bid) / 2
-                if self.prev_mid is not None:
-                    r = self.step_bs + self.prev_inv * (mid - self.prev_mid) - self.step_hedge_cost
-                    self.rewards.append(r)
-                self.step_bs = self.step_hedge_cost = 0.0
-                self.prev_mid = mid
-                self.prev_inv = self.getHoldings(self.symbol)
+            self.calcReward()
 
             # Send orders
             self.hedge()
@@ -135,28 +125,43 @@ class PersistentMarketMakerAgent(TradingAgent):
         bid_price = int(round(mid - bid_spread_mm))
         ask_price = int(round(mid + ask_spread_mm))
 
-        order_size = round(self.random_state.randint(self.min_size, self.max_size) / 2) # order size per LOB side
-
         log_print("{} quoting bid {} / ask {} (buy_eps={}, sell_eps={})", self.name, bid_price, ask_price, buy_eps, sell_eps)
-        self.placeLimitOrder(self.symbol, order_size, True, bid_price, tag=bid_spread_mm)
-        self.placeLimitOrder(self.symbol, order_size, False, ask_price, tag=ask_spread_mm)
+        self.placeLimitOrder(self.symbol, self.order_size, True, bid_price, tag=bid_spread_mm)
+        self.placeLimitOrder(self.symbol, self.order_size, False, ask_price, tag=ask_spread_mm)
 
+
+    def cancelOrders(self):
+            """ cancels all resting limit orders placed by the market maker """
+            for _, order in self.orders.items():
+                self.cancelOrder(order)
+
+
+    def calcReward(self):
+        bid, _, ask, _ = self.getKnownBidAsk(self.symbol)
+        if bid is not None and ask is not None:
+            mid = (bid + ask) / 2
+            self.spread_ref = (ask - bid) / 2
+
+            if self.prev_mid is not None:
+                inv_PnL = self.prev_inv * (mid - self.prev_mid)
+                if self.prev_mid is not None:
+                    r = self.step_bs + inv_PnL - self.step_hedge_cost
+                    self.rewards.append(r)
+
+            self.step_bs = self.step_hedge_cost = 0.0
+            self.prev_mid = mid
+            self.prev_inv = self.getHoldings(self.symbol)
+    
 
     def kernelTerminating (self):
         super().kernelTerminating()
     
-        # Save mean reward
+        # Save rewards
         if self.rewards:
-            avgReward = np.mean(self.rewards)
-            df = pd.Series([avgReward])
+            df = pd.Series(self.rewards)
             self.writeLog(df, filename='PERSISTENT_MM_REWARD_{}'.format(self.symbol))
             log_print("Persistent MM agent reward saved.")
 
-
-    def cancelOrders(self):
-        """ cancels all resting limit orders placed by the market maker """
-        for _, order in self.orders.items():
-            self.cancelOrder(order)
 
     def getWakeFrequency(self):
         return pd.Timedelta(self.wake_up_freq)
